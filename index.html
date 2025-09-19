@@ -5144,6 +5144,39 @@
               { en: "alongside", pt: "ao lado de; junto a", pron: "â-lóng-ssáid" },
         ];
 
+        const synth = window.speechSynthesis;
+        let englishVoice; // Variável para armazenar a voz em inglês
+
+        // Esta função carrega as vozes e encontra uma que seja 'en-US'
+        function loadVoices() {
+            const voices = synth.getVoices();
+            englishVoice = voices.find(voice => voice.lang === 'en-US');
+        }
+
+        // As vozes são carregadas de forma assíncrona, então precisamos esperar por elas
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = loadVoices;
+        }
+
+        function speak(text) {
+            if (synth.speaking) synth.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Define a voz encontrada para a pronúncia
+            if (englishVoice) {
+                utterance.voice = englishVoice;
+            } else {
+                // Se nenhuma voz específica for encontrada, mantém o idioma como fallback
+                utterance.lang = 'en-US';
+            }
+            
+            utterance.rate = 0.9;
+            synth.speak(utterance);
+        }
+        
+        // >>> FIM DAS MUDANÇAS <<<
+
         function generateFullWordList(baseList, targetSize) {
             let fullList = [];
             const seen = new Set();
@@ -5175,7 +5208,7 @@
                     seen.add(uniqueKey);
                 }
             }
-             
+                
             let finalSanitizedList = [];
             const finalSeen = new Set();
             for(let i = 0; i < fullList.length; i++){
@@ -5184,7 +5217,6 @@
                     finalSanitizedList.push(word);
                     finalSeen.add(word.en);
                 } else {
-                    // If word is duplicated, create a new unique version
                     let newEn = `${word.en}${i}`;
                     while(finalSeen.has(newEn)){
                         newEn = `${newEn}_`;
@@ -5203,7 +5235,6 @@
         let currentPage = 1;
         const wordsPerPage = 100;
 
-        const synth = window.speechSynthesis;
         const wordList = document.getElementById('word-list');
         const searchInput = document.getElementById('search-input');
 
@@ -5211,14 +5242,6 @@
             top: { prev: document.getElementById('prev-button-top'), next: document.getElementById('next-button-top'), info: document.getElementById('page-info-top') },
             bottom: { prev: document.getElementById('prev-button-bottom'), next: document.getElementById('next-button-bottom'), info: document.getElementById('page-info-bottom') }
         };
-
-        function speak(text) {
-            if (synth.speaking) synth.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            utterance.rate = 0.9;
-            synth.speak(utterance);
-        }
 
         function renderWords() {
             wordList.innerHTML = '';
@@ -5270,6 +5293,7 @@
         }
 
         function initializeApp() {
+            loadVoices(); // Chama a função para carregar as vozes
             renderWords();
 
             searchInput.addEventListener('input', handleSearch);
@@ -5296,3 +5320,4 @@
     </script>
 </body>
 </html>
+
